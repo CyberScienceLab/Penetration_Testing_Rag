@@ -18,6 +18,7 @@ class Exploit:
         self.codes = codes
 
     
+    # TODO: do we need to print all the above fields?
     def __str__(self) -> str:
         pass
 
@@ -35,6 +36,5 @@ def insert(values: list[tuple]):
 
 # search for rows in db by specified fields
 # return a list of Exploit with a length of 'limit'
-def search_db(id: int, file_path: str, description: str, published: int, author: str, 
-              exploit_type: str, platform: str, codes: list[str], limit: int) -> list[Exploit]:
+def search_db(fields: dict[str, any], limit: int) -> list[Exploit]:
     pass

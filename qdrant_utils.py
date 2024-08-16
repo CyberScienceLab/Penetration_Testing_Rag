@@ -18,8 +18,7 @@ def load_embeddings_custom_metadata(texts: list[str], metadata: list[dict]):
     pass
 
 
-# execute a similarity search with the given query and return the top num_matches matches
-# TODO: figure out whether this should return actual description or maybe just
-#       the id so then we can retrieve all info from postgres db
-def retrieve_relevant_context(query: str, num_matches: int) -> list[str]:
+# execute a similarity search with the given query 
+# return the id of the top num_matches matches
+def retrieve_relevant_context(query: str, num_matches: int) -> list[int]:
     pass
