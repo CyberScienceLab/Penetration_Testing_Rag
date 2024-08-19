@@ -1,8 +1,8 @@
-from langchain.vectorstores import Qdrant
-from langchain.embeddings import HuggingFaceBgeEmbeddings
+from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
 from qdrant_client.http.models import VectorParams
+from langchain_qdrant import QdrantVectorStore
 import time
 
 # ========================================================================
@@ -26,16 +26,23 @@ def create_collection():
     client = QdrantClient(
         url=QDRANT_URL, prefer_grpc=False
     )
-
+        
     try:
-        client.create_collection(
-            collection_name=COLLECTION_NAME,
-            vectors_config=VectorParams(size=VECTOR_SIZE, distance='Cosine'),
-        )
-        print(f"[QDRANT] Successfully creating collection: {COLLECTION_NAME}")
+        collections = client.get_collections()
+        if any(collection.name == COLLECTION_NAME for collection in collections.collections):
+            print(f'[QDRANT] Collection {COLLECTION_NAME} already exists')
+        
+        else:
+            client.create_collection(
+                collection_name=COLLECTION_NAME,
+                vectors_config=VectorParams(size=VECTOR_SIZE, distance='Cosine'),
+            )
+            print(f"[QDRANT] Successfully creating collection: {COLLECTION_NAME}")
 
     except Exception as e:
         print(f"[ERROR] Error creating during creation collection: {COLLECTION_NAME}\n {e}")
+
+    client.close()
 
 
 # load embeddings into collection with custom metadata
@@ -82,8 +89,8 @@ def retrieve_relevant_context_ids(query: str, num_matches: int) -> list[int]:
         url=QDRANT_URL, prefer_grpc=False
     )
 
-    db = Qdrant(client=client, embeddings=embeddings, collection_name=COLLECTION_NAME)
-    docs = db.similarity_search_with_score(query=query, k=num_matches)
+    vector_store = QdrantVectorStore(client=client, embedding=embeddings, collection_name=COLLECTION_NAME)
+    docs = vector_store.similarity_search_with_score(query=query, k=num_matches)
 
     content = []
     for i in docs:

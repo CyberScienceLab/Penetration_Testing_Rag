@@ -31,32 +31,36 @@ class Pen_Test_Rag:
         descriptions = []
         metadata = []
 
-        with open(file=file_path, mode='r', newline='') as f:
-            csv_reader = csv.reader(f)
-            _ = next(csv_reader) # skip header
+        try:
+            with open(file=file_path, mode='r', newline='') as f:
+                csv_reader = csv.reader(f)
+                _ = next(csv_reader) # skip header
 
-            for i, row in enumerate(csv_reader):
-                try:
-                    id = int(row[0]) # INTEGER
-                    file = row[1] # TEXT
-                    description = row[2] # TEXT
-                    published = int(row[3][:4]) # INTEGER (year)
-                    author = row[4] # TEXT
-                    e_type = row[5] # TEXT (exploit type)
-                    platform = row[6] # TEXT
-                    codes = [code for code in row[11].split(';') if code] # TEXT[]
+                for i, row in enumerate(csv_reader):
+                    try:
+                        id = int(row[0]) # INTEGER
+                        file = row[1] # TEXT
+                        description = row[2].lower() # TEXT
+                        published = int(row[3][:4]) # INTEGER (year)
+                        author = row[4].lower() # TEXT
+                        e_type = row[5].lower() # TEXT (exploit type)
+                        platform = row[6].lower() # TEXT
+                        codes = [code.lower() for code in row[11].split(';') if code] # TEXT[]
 
-                except Exception as e:
-                    print(f'[ERROR] Error occurred while reading CSV, Skipping row {i + 2}.')
-                    continue
+                    except Exception as e:
+                        print(f'[ERROR] Error occurred while reading CSV, Skipping row {i + 2}.')
+                        continue
 
-                pg_data.append((id, file, description, published, author, e_type, platform, codes))
-                descriptions.append(description)
-                metadata.append({'id': id})
+                    pg_data.append((id, file, description, published, author, e_type, platform, codes))
+                    descriptions.append(description)
+                    metadata.append({'id': id})
 
 
-        pg.insert(pg_data)
-        qd.load_embeddings_custom_metadata(descriptions, metadata)
+            pg.insert(pg_data)
+            qd.load_embeddings_custom_metadata(descriptions, metadata)
+
+        except Exception as e:
+            print(f'[ERROR] Error reading from file {file_path}: {e}')
 
 
     # used by RAG_App, don't change function signature
@@ -73,12 +77,16 @@ class Pen_Test_Rag:
                 num_chunks
             )
 
-            classified_obj['fields']['ids'] = exploit_ids
+            classified_obj['fields'] = { 'ids': exploit_ids }
 
 
         relevant_context = pg.search_db(classified_obj['fields'], num_chunks)
 
-        return self.build_messages(prompt, file_text, relevant_context), relevant_context
+        return (
+            self.build_messages(prompt, file_text, relevant_context), 
+            # must do str(context) to ensure __str__ is getting called
+            [str(context) for context in relevant_context]
+        )
 
 
     # build messages array to be used by LLM with user prompt and relevant_context and file
@@ -86,17 +94,10 @@ class Pen_Test_Rag:
     def build_messages(self, prompt: str, file_text: str, relevant_context: list[any]) -> list[dict]:
         relevant_context_str = '\n'.join(str(context) for context in relevant_context)
         
-        # TODO: move system prompt to the prompts.py file to make it nicer
         return [
             {
                 'role': 'system',
-                'content': f'''
-                            You are a chat bot. I'm going to ask you a question and use the relevant
-                            context to generate a response.
-
-                            Relevant Context:
-                            {relevant_context_str}
-                            '''
+                'content': SYSTEM_MAIN_PROMPT % (relevant_context_str,)
             },
             {
                 'role': 'user',
@@ -221,14 +222,10 @@ if __name__ == '__main__':
 
             file_path = input('CSV File Path: ')
 
-            if rag.load_data_from_csv(file_path):
-                print(f'Data loading complete from {file_path}')
-
-            else:
-                print(f'[ERROR] Could not load data from {file_path}')
+            rag.load_data_from_csv(file_path)
 
 
-        if selection in 'Tt': # testing
+        elif selection in 'Tt': # testing
             # print('No Testing Setup.')
 
             prompt = input('Prompt: ')

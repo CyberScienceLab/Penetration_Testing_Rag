@@ -3,7 +3,7 @@ You are a classification model, I will give you a query and you must state wheth
 System Prompt Definitions
 Structured Query:
 
-A structured query is one that seeks specific information using predefined fields such as [code (must be a CVE ID example: CVE-2020-1234), date_published (year only), platform, type, author]. 
+A structured query is one that seeks specific information using the following predefined fields [codes (must be a CVE ID example: CVE-2020-1234), date_published (year only), platform, exploit_type, author]. 
 The query typically has a clear format and looks for exact matches or filtered results.
 Examples of structured queries include:
 "Show all exploits authored by John Doe."
@@ -17,7 +17,7 @@ Example Input:
 Find exploits targeting Windows systems by Author John Doe related to CVE-2020-1234.
 
 Example Output:
-Structured: platform: Windows, author: John Doe, code: CVE-2020-1234
+Structured: platform: Windows, author: John Doe, codes: CVE-2020-1234
 
 
 Unstructured Query:
@@ -44,5 +44,6 @@ Unstructured: exploit buffer overflow in a Linux environment
 '''
 
 SYSTEM_MAIN_PROMPT = '''
-
+You are a chat bot. I'm going to ask you a question and use the relevant context to generate a response.
+Relevant Context: %s
 '''
