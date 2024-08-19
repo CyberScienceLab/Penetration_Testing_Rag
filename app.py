@@ -35,7 +35,7 @@ class Pen_Test_Rag:
             csv_reader = csv.reader(f)
             _ = next(csv_reader) # skip header
 
-            for row in csv_reader:
+            for i, row in enumerate(csv_reader):
                 try:
                     id = int(row[0]) # INTEGER
                     file = row[1] # TEXT
@@ -47,7 +47,7 @@ class Pen_Test_Rag:
                     codes = [code for code in row[11].split(';') if code] # TEXT[]
 
                 except Exception as e:
-                    print(f'[ERROR] Error occurred while reading CSV, Skipping row.')
+                    print(f'[ERROR] Error occurred while reading CSV, Skipping row {i + 2}.')
                     continue
 
                 pg_data.append((id, file, description, published, author, e_type, platform, codes))
@@ -66,25 +66,43 @@ class Pen_Test_Rag:
 
         classified_obj = self.build_classified_obj(classification_res)
 
-        # assume if res_obj empty that we're using vector searching
-        if (classified_obj.get('type', '') == 'Structured' 
-            and len(classified_obj['fields']) > 0): 
-            relevant_context = pg.search_db(classified_obj['fields'], num_chunks)
-
-        else:
+        if classified_obj.get('type', '') != 'Structured':
             # if empty object back do vector search with original query
-            relevant_context = qd.retrieve_relevant_context(
+            exploit_ids = qd.retrieve_relevant_context_ids(
                 classified_obj.get('query', prompt), 
                 num_chunks
             )
+
+            classified_obj['fields']['ids'] = exploit_ids
+
+
+        relevant_context = pg.search_db(classified_obj['fields'], num_chunks)
 
         return self.build_messages(prompt, file_text, relevant_context), relevant_context
 
 
     # build messages array to be used by LLM with user prompt and relevant_context and file
     # return: [{'role': 'system', 'content': str}, {'role': 'user', 'content': str}]
-    def build_messages(self, prompt: str, file_text: str, relevant_context: list[str]) -> list[dict]:
-        pass
+    def build_messages(self, prompt: str, file_text: str, relevant_context: list[any]) -> list[dict]:
+        relevant_context_str = '\n'.join(str(context) for context in relevant_context)
+        
+        # TODO: move system prompt to the prompts.py file to make it nicer
+        return [
+            {
+                'role': 'system',
+                'content': f'''
+                            You are a chat bot. I'm going to ask you a question and use the relevant
+                            context to generate a response.
+
+                            Relevant Context:
+                            {relevant_context_str}
+                            '''
+            },
+            {
+                'role': 'user',
+                'content': prompt + 'File Given: {file_text}' if len(file_text) > 0 else ''
+            }
+        ]
 
 
     # use llama to classify whether 'text' is structured and unstructured
@@ -136,7 +154,7 @@ class Pen_Test_Rag:
     #     'type': 'Unstructured',    
     #     'query': 'exploit buffer overflow in a Linux environment'  
     # }
-    def build_classified_obj(res: str) -> dict[str, any]:
+    def build_classified_obj(self, res: str) -> dict[str, any]:
         try:
             search_type, info = res.split(': ', 1)
         except ValueError as e:
@@ -169,7 +187,28 @@ class Pen_Test_Rag:
 
 # main function can be used to load data
 if __name__ == '__main__':
-    rag = Pen_Test_Rag(None, None)
+    # TODO: remove later, just for testing
+    # initialization copied from rag.py ==========================
+    from transformers import AutoTokenizer, AutoModelForCausalLM
+    from transformers.utils import logging
+    logging.set_verbosity_error()
+    import torch
+    torch.cuda.empty_cache()
+
+    def initialize_model():
+        model_id = "meta-llama/Meta-Llama-3-8B-Instruct"
+        tokenizer = AutoTokenizer.from_pretrained(model_id)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_id,
+            torch_dtype=torch.bfloat16,
+            device_map="auto",
+        )
+        return tokenizer, model
+
+    tokenizer, model = initialize_model()
+    # initialization copied from rag.py ==========================
+
+    rag = Pen_Test_Rag(tokenizer, model)
     print('==================')
     print('== Pen Test Rag ==')
     print('==================')
@@ -187,6 +226,17 @@ if __name__ == '__main__':
 
             else:
                 print(f'[ERROR] Could not load data from {file_path}')
+
+
+        if selection in 'Tt': # testing
+            # print('No Testing Setup.')
+
+            prompt = input('Prompt: ')
+            messages, context = rag.get_messages_with_context(prompt, '', 5)
+
+            print('MARK :: ')
+            print(messages, context)
+
 
         else:
             break
