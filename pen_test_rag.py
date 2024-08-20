@@ -103,7 +103,11 @@ class Pen_Test_Rag:
             },
             {
                 'role': 'user',
-                'content': prompt + 'File Given: {file_text}' if len(file_text) > 0 else ''
+                'content': prompt + (
+                        'File Given: {file_text}' 
+                        if len(file_text) > 0 and file_text != 'No File / extra context given.' 
+                        else ''
+                    )
             }
         ]
 

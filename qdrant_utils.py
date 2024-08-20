@@ -53,6 +53,7 @@ def load_embeddings_custom_metadata(texts: list[str], metadata: list[dict]):
     )
     
     text_embeddings = embeddings.embed_documents(texts)
+    print(f'[QDRANT] Vector embeddings created')
 
     # length of texts and metadata should always be the same, but incase
     min_size = min(len(texts), len(metadata))
@@ -60,6 +61,7 @@ def load_embeddings_custom_metadata(texts: list[str], metadata: list[dict]):
         batch_texts = texts[i:i + BATCH_SIZE]
         batch_metadata = metadata[i:i + BATCH_SIZE]
         batch_embeddings = text_embeddings[i:i + BATCH_SIZE]
+
 
         client.upsert(
             collection_name=COLLECTION_NAME,
@@ -81,7 +83,7 @@ def load_embeddings_custom_metadata(texts: list[str], metadata: list[dict]):
 
 
     client.close()
-    print("[QDRANT] Embeddings successfully loaded")
+    print("[QDRANT] Embeddings successfully loaded into collection")
 
 
 # execute a similarity search with the given query 
