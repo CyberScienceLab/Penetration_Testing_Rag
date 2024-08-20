@@ -104,4 +104,5 @@ def retrieve_relevant_context_ids(query: str, num_matches: int) -> list[int]:
             content.append(doc.metadata['id'])
 
     client.close()
+    print(f'[QDRANT] Retrieved {len(content)} points of exploit data')
     return content
