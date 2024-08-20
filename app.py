@@ -31,6 +31,8 @@ class Pen_Test_Rag:
         descriptions = []
         metadata = []
 
+        folder_path = '/'.join(file_path.split('/')[:-1]) + '/'
+
         try:
             with open(file=file_path, mode='r', newline='') as f:
                 csv_reader = csv.reader(f)
@@ -39,7 +41,7 @@ class Pen_Test_Rag:
                 for i, row in enumerate(csv_reader):
                     try:
                         id = int(row[0]) # INTEGER
-                        file = row[1] # TEXT
+                        file = folder_path + row[1] # TEXT
                         description = row[2].lower() # TEXT
                         published = int(row[3][:4]) # INTEGER (year)
                         author = row[4].lower() # TEXT
@@ -188,28 +190,7 @@ class Pen_Test_Rag:
 
 # main function can be used to load data
 if __name__ == '__main__':
-    # TODO: remove later, just for testing
-    # initialization copied from rag.py ==========================
-    from transformers import AutoTokenizer, AutoModelForCausalLM
-    from transformers.utils import logging
-    logging.set_verbosity_error()
-    import torch
-    torch.cuda.empty_cache()
-
-    def initialize_model():
-        model_id = "meta-llama/Meta-Llama-3-8B-Instruct"
-        tokenizer = AutoTokenizer.from_pretrained(model_id)
-        model = AutoModelForCausalLM.from_pretrained(
-            model_id,
-            torch_dtype=torch.bfloat16,
-            device_map="auto",
-        )
-        return tokenizer, model
-
-    tokenizer, model = initialize_model()
-    # initialization copied from rag.py ==========================
-
-    rag = Pen_Test_Rag(tokenizer, model)
+    rag = Pen_Test_Rag(None, None)
     print('==================')
     print('== Pen Test Rag ==')
     print('==================')
@@ -225,14 +206,8 @@ if __name__ == '__main__':
             rag.load_data_from_csv(file_path)
 
 
-        elif selection in 'Tt': # testing
-            # print('No Testing Setup.')
-
-            prompt = input('Prompt: ')
-            messages, context = rag.get_messages_with_context(prompt, '', 5)
-
-            print('MARK :: ')
-            print(messages, context)
+        elif selection in 'Tt': 
+            print('No Testing Setup')
 
 
         else:

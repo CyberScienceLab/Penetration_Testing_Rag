@@ -55,7 +55,8 @@ def load_embeddings_custom_metadata(texts: list[str], metadata: list[dict]):
     text_embeddings = embeddings.embed_documents(texts)
 
     # length of texts and metadata should always be the same, but incase
-    for i in range(0, min(len(texts), len(metadata)), BATCH_SIZE):
+    min_size = min(len(texts), len(metadata))
+    for i in range(0, min_size, BATCH_SIZE):
         batch_texts = texts[i:i + BATCH_SIZE]
         batch_metadata = metadata[i:i + BATCH_SIZE]
         batch_embeddings = text_embeddings[i:i + BATCH_SIZE]
@@ -75,6 +76,7 @@ def load_embeddings_custom_metadata(texts: list[str], metadata: list[dict]):
             ]
         )
 
+        print(f'[QDRANT] Batch {min(i + BATCH_SIZE, min_size)} of {min_size}')
         time.sleep(EMBEDDING_DELAY_SECONDS)
 
 
@@ -98,5 +100,6 @@ def retrieve_relevant_context_ids(query: str, num_matches: int) -> list[int]:
 
         if 'id' in doc.metadata:
             content.append(doc.metadata['id'])
-    
+
+    client.close()
     return content

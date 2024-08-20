@@ -2,10 +2,12 @@
 
 import psycopg2 as psy
 import os
+import time
 
 # ========================================================================
 TABLE_NAME = 'exploits'
-BATCH_SIZE = 100
+BATCH_SIZE = 1000
+BATCH_DELAY_SECONDS = 3
 TABLE_FIELDS = ['id', 'file_path', 'description', 'date_published', 'author', 
                 'e_type', 'platform', 'codes']
 CREATE_TABLE_QUERY = f'''
@@ -85,8 +87,14 @@ def insert(values: list[tuple]):
     try:
         with psy.connect(**CONNECTION_PARAMS) as con:
             with con.cursor() as cursor:
-                cursor.executemany(INSERT_QUERY, values)
-                con.commit()
+                
+                values_size = len(values)
+                for i in range(0, values_size, BATCH_SIZE):
+                    cursor.executemany(INSERT_QUERY, values[i:i + BATCH_SIZE])
+                    con.commit()
+
+                    print(f'[POSTGRES] Batch {min(values_size, i + BATCH_SIZE)} of {values_size}')
+                    time.sleep(BATCH_DELAY_SECONDS)
 
         print(f'[POSTGRES] Exploit data successfully loaded')
 
