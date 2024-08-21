@@ -94,7 +94,8 @@ class Pen_Test_Rag:
             relevant_context = pg.search_db(classified_obj['fields'], num_chunks)
 
         file_str = ''
-        if True: # TODO: add a flag or way to indicate when to get file
+        if False:
+        # if True: # TODO: add a flag or way to indicate when to get file
             file_str = self.retrieve_file_as_str(relevant_context[0].file_path)
 
         return (

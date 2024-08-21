@@ -94,14 +94,14 @@ def retrieve_relevant_context_ids(query: str, num_matches: int) -> list[int]:
     )
 
     vector_store = QdrantVectorStore(client=client, embedding=embeddings, collection_name=COLLECTION_NAME)
-    docs = vector_store.similarity_search_with_score(query=query, k=num_matches)
+    points = vector_store.similarity_search_with_score(query=query, k=num_matches)
 
     content = []
-    for i in docs:
-        doc, _ = i
+    for point in points:
+        body, _ = point # ignore vectors
 
-        if 'id' in doc.metadata:
-            content.append(doc.metadata['id'])
+        if 'id' in body.metadata:
+            content.append(body.metadata['id'])
 
     client.close()
     print(f'[QDRANT] Retrieved {len(content)} points of exploit data')
