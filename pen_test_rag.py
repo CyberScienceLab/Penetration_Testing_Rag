@@ -345,10 +345,8 @@ if __name__ == '__main__':
             # prompt = 'Can you show me a code example of HTML injection',
             # prompt = 'Show me exploits by John Doe targeting Windows systems from 2021.'
             prompt = input('Prompt: ')
-            messages, chunks, file_str = rag.get_messages_with_context(prompt, '', 5)
+            messages, chunks = rag.get_messages_with_context(prompt, '', 5)
             print(f'MARK :: messages -> {messages}')
-
-            print(f'MARK :: file_str -> {file_str}')
 
 
         else:
