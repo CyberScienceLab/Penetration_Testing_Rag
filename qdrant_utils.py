@@ -7,7 +7,6 @@ import time
 
 # ========================================================================
 QDRANT_URL = 'http://localhost:6333'
-COLLECTION_NAME = 'exploits'
 VECTOR_SIZE = 1024
 BATCH_SIZE = 100
 EMBEDDING_DELAY_SECONDS = 5
@@ -22,32 +21,33 @@ embeddings = HuggingFaceBgeEmbeddings(
 
 
 # create collection if it doesn't already exist
-def create_collection():
+def create_collections(collections: list[str]):
     client = QdrantClient(
         url=QDRANT_URL, prefer_grpc=False
     )
         
-    try:
-        collections = client.get_collections()
-        if any(collection.name == COLLECTION_NAME for collection in collections.collections):
-            print(f'[QDRANT] Collection {COLLECTION_NAME} already exists')
-        
-        else:
-            client.create_collection(
-                collection_name=COLLECTION_NAME,
-                vectors_config=VectorParams(size=VECTOR_SIZE, distance='Cosine'),
-            )
-            print(f"[QDRANT] Successfully creating collection: {COLLECTION_NAME}")
+    for collection in collections:
+        try:
+            qd_collections = client.get_collections()
+            if any(qd_collection.name == collection for qd_collection in qd_collections.collections):
+                print(f'[QDRANT] Collection {collection} already exists')
+            
+            else:
+                client.create_collection(
+                    collection_name=collection,
+                    vectors_config=VectorParams(size=VECTOR_SIZE, distance='Cosine'),
+                )
+                print(f"[QDRANT] Successfully creating collection: {collection}")
 
-    except Exception as e:
-        print(f"[ERROR] Error creating during creation collection: {COLLECTION_NAME}\n {e}")
+        except Exception as e:
+            print(f"[ERROR] Error creating during creation collection: {collection}\n {e}")
 
     client.close()
 
 
 # load embeddings into collection with custom metadata
 # use batches to prevent file descriptor error
-def load_embeddings_custom_metadata(texts: list[str], metadata: list[dict]):
+def load_embeddings_custom_metadata(texts: list[str], metadata: list[dict], collection: str):
     client = QdrantClient(
         url=QDRANT_URL, prefer_grpc=False
     )
@@ -64,10 +64,11 @@ def load_embeddings_custom_metadata(texts: list[str], metadata: list[dict]):
 
 
         client.upsert(
-            collection_name=COLLECTION_NAME,
+            collection_name=collection,
             points=[
                 models.PointStruct(
-                    id=batch_metadata[n].get('id', i * BATCH_SIZE + n),
+                    # TODO: remove the + 50000
+                    id=batch_metadata[n].get('id', i * BATCH_SIZE + n) + 50000,
                     vector=embedding,
                     payload={
                         'metadata': batch_metadata[n],
@@ -88,12 +89,12 @@ def load_embeddings_custom_metadata(texts: list[str], metadata: list[dict]):
 
 # execute a similarity search with the given query 
 # return the id of the top num_matches matches
-def retrieve_relevant_context_ids(query: str, num_matches: int) -> list[int]:
+def retrieve_relevant_context_ids(query: str, num_matches: int, collection: str) -> list[int]:
     client = QdrantClient(
         url=QDRANT_URL, prefer_grpc=False
     )
 
-    vector_store = QdrantVectorStore(client=client, embedding=embeddings, collection_name=COLLECTION_NAME)
+    vector_store = QdrantVectorStore(client=client, embedding=embeddings, collection_name=collection)
     points = vector_store.similarity_search_with_score(query=query, k=num_matches)
 
     content = []

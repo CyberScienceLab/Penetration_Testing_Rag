@@ -49,6 +49,7 @@ class Exploit:
         self.exploit_type = exploit_type
         self.platform = platform
         self.codes = codes
+        self.file_snippet = ''
 
     
     # TODO: do we need to print all the fields?
@@ -63,6 +64,7 @@ class Exploit:
                 f'exploit_type: {self.exploit_type}, ' 
                 f'platform: {self.platform}, ' 
                 f'codes: {self.codes} '
+                f'file_snippet: {self.file_snippet}'
                 '}'
             )
 
