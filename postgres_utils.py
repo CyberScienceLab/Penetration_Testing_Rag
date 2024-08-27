@@ -27,12 +27,18 @@ INSERT INTO {TABLE_NAME} ({', '.join(TABLE_FIELDS)})
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 ON CONFLICT (id) DO NOTHING;
 '''
+
+POSTGRES_PASSWORD = os.getenv('POSTGRES_PASSWORD')
+if POSTGRES_PASSWORD is None:
+    print(f'[ERROR] Missing env variable: POSTGRES_PASSWORD')
+    exit(1)
+
 CONNECTION_PARAMS = {
     'host': 'localhost',
     'port': 5432,
     'database': 'postgres',
     'user': 'postgres',
-    'password': os.getenv('POSTGRES_PASSWORD')
+    'password': POSTGRES_PASSWORD
 }
 # ========================================================================
 
@@ -52,7 +58,7 @@ class Exploit:
         self.file_snippet = ''
 
     
-    # TODO: do we need to print all the fields?
+    # function is called when calling str(exploit)
     def __str__(self) -> str:
         return (
                 'EXPLOIT{ '
@@ -65,7 +71,7 @@ class Exploit:
                 f'platform: {self.platform}, ' 
                 f'codes: {self.codes} '
                 f'file_snippet: {self.file_snippet}'
-                '}'
+                ' }'
             )
 
 

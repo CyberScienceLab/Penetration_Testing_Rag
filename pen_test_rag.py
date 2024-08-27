@@ -17,9 +17,10 @@ EXPLOITS_CODE_COLLECTION = 'exploits-code'
 
 class Pen_Test_Rag:
 
-    def __init__(self, tokenizer, model):
+    def __init__(self, tokenizer, model, pen_test_proj_path):
         self.tokenizer = tokenizer
         self.model = model
+        self.pen_test_proj_path = pen_test_proj_path
 
 
     # create qdrant collection and postgres table
@@ -63,6 +64,7 @@ class Pen_Test_Rag:
                     descriptions.append(description)
                     metadata.append({'id': id})
 
+                    # optionally embed files since it takes a lot longer to load data
                     if embed_files:
                         self.embed_code(file, id)
 
@@ -164,8 +166,7 @@ class Pen_Test_Rag:
     # take file_path string which is retrieved from pg database, find file
     # return file contents as a string
     def retrieve_file_as_str(self, file_path: str) -> str:
-        # TODO: move this to env probably, only required since RAG_App is in different location
-        file_path = '/home/researchuser/mark/Penetration_Testing_Rag/' + file_path
+        file_path = self.pen_test_proj_path + file_path
 
         try:
             file_str = ''
@@ -206,11 +207,6 @@ class Pen_Test_Rag:
             {
                 'role': 'user',
                 'content': prompt + 'Given the information below' + '\n**Exploit Data: **' + relevant_context_str
-                    # (
-                    #     'File Given: {file_text}' 
-                    #     if len(file_text) > 0 and file_text != 'No File / extra context given.' 
-                    #     else ''
-                    # )
             }
         ]
 
@@ -267,7 +263,7 @@ class Pen_Test_Rag:
     def build_classified_obj(self, res: str) -> dict[str, any]:
         try:
             search_type, info = res.split(': ', 1)
-        except ValueError as e:
+        except ValueError:
             print('[WARNING] Invalid response from LLM, defaulting to Unstructured')
             return {}
 
@@ -285,26 +281,25 @@ class Pen_Test_Rag:
                 }
             }
         
+
         if search_type == 'Unstructured':
             return {
                 'type': 'Unstructured',
                 'query': info
             }
     
+
         print('[WARNING] Invalid response from LLM, defaulting to Unstructured')
         return {}
     
 
-# main function can be used to load data
 if __name__ == '__main__':
-    tokenizer, model = None, None
-
-    # ============================ REMOVE ==========================
     from transformers import AutoTokenizer, AutoModelForCausalLM
     import torch
     torch.cuda.empty_cache()
     from transformers.utils import logging
     logging.set_verbosity_error()
+
     # initalize and return  llama3 tokenizer and model
     def initialize_model():
         model_id = "meta-llama/Meta-Llama-3-8B-Instruct"
@@ -315,19 +310,39 @@ if __name__ == '__main__':
             device_map="auto",
         )
         return tokenizer, model
+    
+    # prompt llama with messages and use rag tokenizer and model
+    def prompt_llama(messages: list[dict], rag: Pen_Test_Rag) -> str:
+        input_ids = rag.tokenizer.apply_chat_template(
+            messages, 
+            add_generation_prompt=True, 
+            return_tensors="pt"
+        ).to(rag.model.device)
 
-    tokenizer, model = initialize_model()
-    # ============================ REMOVE ==========================
+        outputs = rag.model.generate(
+            input_ids, 
+            max_new_tokens=700, 
+            eos_token_id=rag.tokenizer.eos_token_id, 
+            do_sample=True, 
+            temperature=0.2, 
+            top_p=0.9
+        )
 
-    rag = Pen_Test_Rag(tokenizer, model)
+        return rag.tokenizer.decode(
+            outputs[0][input_ids.shape[-1]:], 
+            skip_special_tokens=True
+        )
+
+
+    rag = Pen_Test_Rag(*initialize_model(), './')
     print('==================')
     print('== Pen Test Rag ==')
     print('==================')
 
     while True:
-        selection = input('Would you like to load data from CSV (y or n): ')
+        selection = input('1) Load Data From CSV\n2) Prompt Rag\n3) Quit Program\n> ')
 
-        if selection in 'Yy':
+        if selection in '1': # Load data
             rag.init_database()
 
             file_path = input('CSV File Path: ')
@@ -335,19 +350,16 @@ if __name__ == '__main__':
             rag.load_data_from_csv(file_path, False)
 
 
-        elif selection in 'Tt': 
-            # print('No Testing Setup')
-
-            # prompt = 'Find an exploit that targets aix systems by Author Mark Schaefer in 1998.',
-            # prompt = 'Can you give me an example of a buffer overflow on a linux system?',
-            # prompt = 'Give me an example of an exploit related to CVE-2009-3699',
-            # prompt = 'Give me an example of an exploit related to SQL Injection',
-            # prompt = 'Can you show me a code example of HTML injection',
-            # prompt = 'Show me exploits by John Doe targeting Windows systems from 2021.'
+        elif selection in '2': # Prompt Llama
             prompt = input('Prompt: ')
             messages, chunks = rag.get_messages_with_context(prompt, '', 5)
-            print(f'MARK :: messages -> {messages}')
+
+            # print(f'messages -> {messages}')
+            # print(f'relevant context -> {chunks}')
+
+            res = prompt_llama(messages, rag)
+            print(f'Llama -> {res}')
 
 
-        else:
+        else: # Quit program
             break

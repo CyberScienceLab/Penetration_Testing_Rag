@@ -20,7 +20,7 @@ embeddings = HuggingFaceBgeEmbeddings(
 )
 
 
-# create collection if it doesn't already exist
+# create collections if they don't already exist
 def create_collections(collections: list[str]):
     client = QdrantClient(
         url=QDRANT_URL, prefer_grpc=False
