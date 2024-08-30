@@ -7,7 +7,7 @@ import time
 
 # ========================================================================
 QDRANT_URL = 'http://localhost:6333'
-VECTOR_SIZE = 1024
+VECTOR_SIZE = 1024 # if we plan to embed large data in the future this must be updated
 BATCH_SIZE = 100
 EMBEDDING_DELAY_SECONDS = 5
 # ========================================================================
@@ -26,6 +26,7 @@ def create_collections(collections: list[str]):
         url=QDRANT_URL, prefer_grpc=False
     )
         
+    # for each collection passed in args, if it doesn't exist create it in Qdrant
     for collection in collections:
         try:
             qd_collections = client.get_collections()
@@ -67,8 +68,7 @@ def load_embeddings_custom_metadata(texts: list[str], metadata: list[dict], coll
             collection_name=collection,
             points=[
                 models.PointStruct(
-                    # TODO: remove the + 50000
-                    id=batch_metadata[n].get('id', i * BATCH_SIZE + n) + 50000,
+                    id=batch_metadata[n].get('id', i * BATCH_SIZE + n),
                     vector=embedding,
                     payload={
                         'metadata': batch_metadata[n],
