@@ -8,11 +8,11 @@
 
 This project implements a Retrieval-Augmented Generation (RAG) model to provide detailed information about various exploits. By utilizing Meta's Llama3, the system retrieves relevant descriptions and strategies from a comprehensive database to aid in different attack scenarios. It also analyzes files and matches them with code snippets from the database to find related exploits.
 
-Learn more about how to use our Penetration_Testing_Rag from our [document](assets/FILL_IN).
+Learn more about how to use our Penetration Testing Rag from our [document](assets/Developing_a_Rag_To_Mitigate_LLM_Hallucinations_in_Penetration_Testing.pdf).
 
 For a more interactive learning experience, check out our YouTube video
-[**How to Use RAG for Pen Testing**](https://www.youtube.com/FILL_IN).
-[![RAG_App thumbnail](assets/thumbnail.png)](https://youtu.be/FILL_IN)
+[**How to Use RAG for Pen Testing**](https://youtu.be/NWp4P6u6TXI?si=5-oWdLatNC4Wip8I).
+[![RAG_App thumbnail](assets/thumbnail.png)](https://youtu.be/NWp4P6u6TXI?si=5-oWdLatNC4Wip8I)
 
 ## Examples
 
@@ -22,7 +22,7 @@ For a more interactive learning experience, check out our YouTube video
 
 ![Example prompt 'escalate linux server with kernel 2.x'](assets/escalate_linux_server_w_kernel.png)
 
-# 
+#
 
 <p align="center">
   <a href='https://cybersciencelab.com/'><img src="assets/Cyber_Science_Lab_Footer.png" alt="Cyber Science Lab Footer"></a>
