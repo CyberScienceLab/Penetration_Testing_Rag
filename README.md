@@ -11,7 +11,7 @@ This project implements a Retrieval-Augmented Generation (RAG) model to provide 
 Learn more about how to use our Penetration_Testing_Rag from our [document](assets/FILL_IN).
 
 For a more interactive learning experience, check out our YouTube video
-[**How to Use RAG for Pen Testing**: Mitigating LLM Hallucinations in Cybersecurity](https://www.youtube.com/FILL_IN).
+[**How to Use RAG for Pen Testing**](https://www.youtube.com/FILL_IN).
 [![RAG_App thumbnail](assets/thumbnail.png)](https://youtu.be/FILL_IN)
 
 ## Examples
