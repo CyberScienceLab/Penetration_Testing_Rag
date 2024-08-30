@@ -22,7 +22,7 @@ For a more interactive learning experience, check out our YouTube video
 
 ![Example prompt 'escalate linux server with kernel 2.x'](assets/escalate_linux_server_w_kernel.png)
 
-<hr />
+# 
 
 <p align="center">
   <a href='https://cybersciencelab.com/'><img src="assets/Cyber_Science_Lab_Footer.png" alt="Cyber Science Lab Footer"></a>
